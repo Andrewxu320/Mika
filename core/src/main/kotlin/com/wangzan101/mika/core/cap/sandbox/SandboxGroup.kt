@@ -16,9 +16,11 @@ import com.wangzan101.mika.core.tool.ToolExecution
 import com.wangzan101.mika.core.tool.Verb
 import com.wangzan101.mika.core.tool.argStr
 import com.wangzan101.mika.core.tool.bool
+import com.wangzan101.mika.core.tool.fail
 import com.wangzan101.mika.core.tool.int
 import com.wangzan101.mika.core.tool.str
 import com.wangzan101.mika.core.tool.strArray
+import com.wangzan101.mika.core.secret.Secrets
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonArray
@@ -31,6 +33,9 @@ import kotlinx.serialization.json.put
 internal const val SANDBOX = "sandbox"
 
 private const val TIMEOUT = "Time limit in seconds, 1-600 (default 60). The command is stopped when it runs out."
+
+/** 一次脚本最多带几个存下的密钥。 */
+private const val MAX_SECRET_ENV = 8
 
 /**
  * 沙箱一组:设备支持时提供(运行环境没准备好时工具调用会等它)。路径都是沙箱里的路径;
@@ -84,9 +89,29 @@ internal object RunBundledScript : SandboxTool {
             "script" to str("Path of the script inside that directory, e.g. scripts/extract_pdf.py."),
             "args" to strArray("Arguments, at most 50, each passed unchanged.", 50),
             "timeoutSec" to int(TIMEOUT, 1, 600),
+            "secretEnv" to strArray(
+                "Optional keys from secret_save to hand this run as environment variables, written NAME=entry " +
+                    "(e.g. AMAP_KEY=amap). Only this one process sees them; they are not in the arguments or the result.", MAX_SECRET_ENV),
         ), listOf("source", "script"))
 
-    override suspend fun execute(a: Args, ctx: ToolContext) = ctx.sandboxRunner!!.run { ws, ready -> runScript(a, ws, ready.network, ctx.callId, ctx.sub, ctx.tools) }
+    override suspend fun execute(a: Args, ctx: ToolContext) = ctx.sandboxRunner!!.run { ws, ready ->
+        val specs = a.strList("secretEnv", 0, MAX_SECRET_ENV, itemMax = 200) ?: emptyList()
+        val env = LinkedHashMap<String, String>()
+        for (raw in specs) {
+            val spec = Secrets.envSpec(raw)
+                ?: return@run fail("secret_env_invalid", "secretEnv entries are written NAME=entry, e.g. AMAP_KEY=amap; got \"$raw\".", recoverable = true)
+            val book = ctx.config.secrets
+                ?: return@run fail("secret_unavailable", "No stored keys are available in this task, so secretEnv cannot be used.", recoverable = false)
+            val value = withContext(Dispatchers.IO) { book.take(spec.entry) }
+                ?: return@run fail(
+                    "secret_missing",
+                    "The stored key \"${spec.entry}\" is missing or has expired, so this script was not run. Ask the user for it again with secret_save, or do the task without it.",
+                    recoverable = true,
+                )
+            env[spec.variable] = value
+        }
+        runScript(a, ws, ready.network, ctx.callId, ctx.sub, ctx.tools, env)
+    }
     override fun logTarget(o: JsonObject, r: ToolExecution, ctx: ToolContext) = listOfNotNull(o.argStr("source"), o.argStr("script")).joinToString("/")
     override fun observations(o: JsonObject, r: ToolExecution, log: EvidenceLog) =
         listOfNotNull(res(r, "output")?.let { output("退出码 ${res(r, "exitCode")}:\n$it", Place.command("run_bundled_script ${o.argStr("source")}/${o.argStr("script")}"), o["args"]?.toString()) })

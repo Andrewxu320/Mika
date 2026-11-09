@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lulu-roadtrip.dev/schemas/trip.schema.json",
+  "title": "Lulu Roadtrip canonical trip",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "trip", "participants", "vehicle", "days", "stops", "legs", "risks", "alternatives", "capabilities", "unknowns", "revisions", "assessment"],
+  "properties": {
+    "schemaVersion": { "const": "0.1.0" },
+    "trip": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "state", "timezone", "startDate", "endDate", "revision"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "title": { "type": "string", "minLength": 1 },
+        "state": { "enum": ["drafted", "awaiting-confirmation", "confirmed", "researched", "assessed", "alternatives-reviewed", "validated", "rendered"] },
+        "timezone": { "type": "string", "minLength": 1 },
+        "startDate": { "type": "string", "format": "date" },
+        "endDate": { "type": "string", "format": "date" },
+        "revision": { "$ref": "#/$defs/id" },
+        "confirmedAt": { "type": ["string", "null"], "format": "date-time" }
+      }
+    },
+    "participants": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["count"],
+      "properties": { "count": { "type": ["integer", "null"], "minimum": 1 } }
+    },
+    "vehicle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "driveTrain", "rangeKm"],
+      "properties": {
+        "type": { "type": ["string", "null"] },
+        "driveTrain": { "type": ["string", "null"] },
+        "rangeKm": { "type": ["number", "null"], "exclusiveMinimum": 0 }
+      }
+    },
+    "days": { "$ref": "#/$defs/entityMap" },
+    "stops": { "$ref": "#/$defs/entityMap" },
+    "legs": { "$ref": "#/$defs/entityMap" },
+    "risks": { "$ref": "#/$defs/entityMap" },
+    "alternatives": { "$ref": "#/$defs/entityMap" },
+    "capabilities": { "type": "object", "additionalProperties": { "$ref": "capability.schema.json" } },
+    "unknowns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "reason"],
+        "properties": { "path": { "type": "string" }, "reason": { "type": "string" } }
+      }
+    },
+    "revisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "createdAt", "reason", "parentId"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "reason": { "type": "string", "minLength": 1 },
+          "parentId": { "anyOf": [{ "$ref": "#/$defs/id" }, { "type": "null" }] }
+        }
+      },
+      "minItems": 1
+    },
+    "assessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ruleVersion", "gate", "assessedAt", "snapshotRef"],
+      "properties": {
+        "ruleVersion": { "type": "string" },
+        "gate": { "$ref": "#/$defs/gate" },
+        "assessedAt": { "type": ["string", "null"], "format": "date-time" },
+        "snapshotRef": { "type": ["string", "null"] }
+      }
+    },
+    "artifactRevision": { "anyOf": [{ "$ref": "#/$defs/id" }, { "type": "null" }] }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$" },
+    "entityMap": {
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/id" },
+      "additionalProperties": { "type": "object", "required": ["id"], "properties": { "id": { "$ref": "#/$defs/id" } } }
+    },
+    "gate": { "enum": ["not-executable", "modification-required", "executable-with-monitoring", "insufficient-evidence", "passed"] }
+  }
+}

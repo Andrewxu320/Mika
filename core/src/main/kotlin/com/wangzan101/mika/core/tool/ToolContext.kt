@@ -46,6 +46,8 @@ internal class ToolConfig(
     val runRecords: com.wangzan101.mika.core.record.RunRecords? = null,
     /** 用户配置并启用的网页搜索;为空时不提供 web_search。 */
     val webSearch: com.wangzan101.mika.core.search.WebSearch? = null,
+    /** 存下的密钥(加密保存,值不返回模型);为空时不提供 secret_save、secret_status、secret_delete。 */
+    val secrets: com.wangzan101.mika.core.secret.SecretBook? = null,
 )
 
 /**

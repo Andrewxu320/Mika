@@ -153,7 +153,9 @@ internal class SandboxTools(
             phoneHandler(callId, sub, tools)), ws)
     }
 
-    internal suspend fun runScript(a: Args, ws: String, network: Boolean, callId: String = "script", sub: SubActions? = null, tools: ToolIndex? = null): ToolExecution {
+    internal suspend fun runScript(a: Args, ws: String, network: Boolean, callId: String = "script", sub: SubActions? = null, tools: ToolIndex? = null,
+        /** 这次进程另外带的环境变量(存下的密钥);只在这一次进程里,不进参数、结果与运行记录。 */
+        env: Map<String, String> = emptyMap()): ToolExecution {
         val source = a.str("source", max = 300)!!
         val script = a.str("script", max = 500)!!
         val args = scriptArgs(a.o["args"])
@@ -179,7 +181,7 @@ internal class SandboxTools(
         if (!sandbox.verifyScript(skillRel, rel)) return unavailable("$rel differs from the copy that comes with Mika and could not be restored, so it was not run.")
         (onScript ?: onCommand)((listOf("$skillRel/$rel") + args).joinToString(" "))
         return commandResult(sandbox.runWithPhone(ws, listOf(interpreter, path) + args, null, timeout * 1000L, onProgress,
-            phoneHandler(callId, sub, tools)), ws)
+            phoneHandler(callId, sub, tools), env), ws)
     }
 
     /** 能调哪些由工具自己声明([com.wangzan101.mika.core.tool.ToolInfo.sandboxCallable]);没给工具表时一个都不开放。 */

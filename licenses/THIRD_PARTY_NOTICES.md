@@ -244,3 +244,15 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ```
+
+## lulu-road-trip-planner
+
+- Project: https://gitee.com/xusilu320/lulu-road-trip-planner
+- License: MIT
+- Usage: 内置技能 roadtrip-review 的脚本与策略文档原样取自该仓库:
+  - `core/src/main/resources/skills/roadtrip-review/lib/`
+  - `core/src/main/resources/skills/roadtrip-review/scripts/`
+  - `core/src/main/resources/skills/roadtrip-review/references/`
+  脚本由 tools/lulu/sync.mjs 同步并加两行头(SPDX + 出处),许可证原文随包放在
+  skills/roadtrip-review/LICENSE.lulu.md。
+

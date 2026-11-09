@@ -119,6 +119,19 @@ class MikaApp : Application(), WebOwner, SandboxOwner, TaskEnvironment.Owner, Ph
     }
     val childRuns by lazy { FileChildRunStore(java.io.File(filesDir, "children-v3.json")) }
 
+    /**
+     * 存下的密钥(用户给的 API Key 一类):整份加密保存,到期自动删除。
+     * 模型只经 secret_* 看到名字、末四位和到期时间;值只交给 run_bundled_script 那一次进程的环境变量。
+     */
+    val secrets by lazy {
+        com.wangzan101.mika.core.secret.SecretBook(
+            com.wangzan101.mika.settings.SecretFileStorage(
+                java.io.File(filesDir, "settings"),
+                com.wangzan101.mika.settings.KeystoreKeyCipher("mika-secrets"),
+            ),
+        )
+    }
+
     /** 外部 MCP server 的设置(与「连接电脑」的 inbound 设置分开)。 */
     val mcpServers by lazy {
         com.wangzan101.mika.settings.McpServerStore(

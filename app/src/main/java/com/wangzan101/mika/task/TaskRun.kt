@@ -848,7 +848,10 @@ class TaskRun(
                 webSearch = com.wangzan101.mika.settings.WebSearchSettings.get(service).service(),
                 // 已 root 的手机上用户打开了「允许 Mika 执行 root 命令」才登记 root 工具(子任务、条件检查不给)
                 root = phoneServices.shellManager.root.takeIf { !conditionCheck && it.commandsAllowed() }
-                    ?.let { r -> RootCommands(RootShell::su, r::commandsAllowed) { a -> if (a == null) r.suGone() else r.commandsDenied(a) } })
+                    ?.let { r -> RootCommands(RootShell::su, r::commandsAllowed) { a -> if (a == null) r.suGone() else r.commandsDenied(a) } },
+                // 存下的密钥:secret_* 三个工具,以及 run_bundled_script 的 secretEnv
+                secrets = (service.application as MikaApp).secrets,
+            )
             dispatcher = tools
             val agent = AgentLoop(
                 model, tools,

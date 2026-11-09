@@ -3,6 +3,10 @@ package com.wangzan101.mika.core.cap.sandbox
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.LinkOption
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 import com.wangzan101.mika.core.workspace.SandboxError
 import com.wangzan101.mika.core.workspace.SandboxPaths
 
@@ -31,10 +35,44 @@ object ShareRules {
         if (!Files.isRegularFile(hp, LinkOption.NOFOLLOW_LINKS)) throw SandboxError("not_a_file", "$p is not a regular file.", recoverable = true)
         val size = Files.size(hp)
         if (size > MAX_BYTES) throw SandboxError("file_too_large", "$p is ${size shr 20} MB; at most 100 MB can be shared.", recoverable = true)
+        // 行程目录里的产物要先过校验;别的文件不受影响
+        tripProblem(f.parentFile)?.let { (code, message) -> throw SandboxError(code, message, recoverable = true) }
         return f to saveAs
     }
 
     fun plainName(n: String): Boolean = SandboxPaths.plainName(n)
+
+    /**
+     * 「这里是一个行程目录」的标记:同目录有 trip.json。有它的目录里,导出任何文件都要先通过校验——
+     * 同目录要有 validation.json 且 valid 为 true;有 manifest.json 时,它还必须是这一份修订
+     * (tripRevision 与 trip.json 的 revision 一致),否则产物是旧的。别的目录不受影响。
+     */
+    internal fun tripProblem(dir: File?): Pair<String, String>? {
+        if (dir == null || !File(dir, TRIP_MARKER).isFile) return null
+        val validation = File(dir, "validation.json")
+        if (!validation.isFile) return "trip_not_validated" to
+            ("This folder holds a trip but has not been validated yet. Run the trip's validate script on the folder, fix every error, then render and share the artifacts.")
+        val obj = runCatching { Json.parseToJsonElement(validation.readText()) as? JsonObject }.getOrNull()
+            ?: return "trip_validation_unreadable" to
+                ("validation.json in this trip folder cannot be read as a JSON object. Run the validate script again.")
+        if (obj["valid"] != JsonPrimitive(true)) return "trip_not_valid" to
+            ("validation.json says this trip has errors (valid is not true). Fix them and validate again before sharing.")
+        val revision = runCatching {
+            (Json.parseToJsonElement(File(dir, TRIP_MARKER).readText()) as JsonObject)["trip"]
+                ?.let { it as? JsonObject }?.get("revision")?.let { it as? JsonPrimitive }?.contentOrNull
+        }.getOrNull() ?: return null
+        val manifest = File(dir, "manifest.json").takeIf { it.isFile } ?: return null
+        val rendered = runCatching {
+            (Json.parseToJsonElement(manifest.readText()) as JsonObject)["tripRevision"]
+                ?.let { it as? JsonPrimitive }?.contentOrNull
+        }.getOrNull() ?: return null
+        if (rendered != revision) return "trip_artifacts_stale" to
+            ("The rendered artifacts are from revision $rendered but the trip is now $revision. Render the bundle again before sharing.")
+        return null
+    }
+
+    /** 判定行程目录用的标记文件。 */
+    private const val TRIP_MARKER = "trip.json"
 
     /** 不让导出:安装包放进「下载」里,用户一点就可能装上沙箱里做出来的 App。 */
     private val REFUSED_TYPES = setOf("apk", "apks", "xapk", "aab")

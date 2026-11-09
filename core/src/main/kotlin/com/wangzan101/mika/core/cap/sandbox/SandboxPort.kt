@@ -43,9 +43,12 @@ interface SandboxPort {
     suspend fun openProcess(workspace: String, argv: List<String>, cwd: String? = null): SandboxProcess =
         throw SandboxError("sandbox_stdio_unsupported", "This device cannot run stdio MCP servers.", recoverable = true)
 
-    /** 当前任务提供手机工具入口时，命令可通过桥接调用；旧实现仍可只实现 [run]。 */
+    /**
+     * 当前任务提供手机工具入口时，命令可通过桥接调用；旧实现仍可只实现 [run]。
+     * [env]:这次进程另外带的环境变量(存下的密钥经它交给脚本,只活这一次,不进参数、结果与运行记录)。
+     */
     suspend fun runWithPhone(workspace: String, argv: List<String>, cwd: String?, timeoutMs: Long,
-        onProgress: (String) -> Unit, phone: PhoneCommandHandler?): CommandResult =
+        onProgress: (String) -> Unit, phone: PhoneCommandHandler?, env: Map<String, String> = emptyMap()): CommandResult =
         run(workspace, argv, cwd, timeoutMs, onProgress)
 
     /** 沙箱路径对应的宿主文件;越界(含符号链接指到外面)或 [forWrite] 时不在工作区下,返回 null。只用来判断,读写走 [files]。 */

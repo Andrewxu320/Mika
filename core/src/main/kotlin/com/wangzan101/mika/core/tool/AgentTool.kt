@@ -33,6 +33,7 @@ enum class Verb {
     RootCommand,
     Wait, AskUser, RequestConfirmation, HandToUser, HandleObstacle, EndNotDone,
     KnowledgeSearch, KnowledgeRead, SkillSearch, SkillRead, SkillSave, MemorySearch, MemorySave, MemoryEdit, ProfileEdit, HistoryRead, WebSearch,
+    SecretSave, SecretStatus, SecretDelete,
     ScheduleTask,
     SpawnAgent, SettingsList, SettingsSet,
 }

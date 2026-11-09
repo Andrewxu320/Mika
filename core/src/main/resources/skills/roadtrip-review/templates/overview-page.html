@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}}</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  :root{--ink:#12161c;--muted:#5b6674;--line:#e4e8ee;--bg:#f6f7f9;--card:#fff;
+        --high:#c0392b;--med:#d98324;--low:#3b7bbf;--ok:#2e7d5b;--accent:#1d4ed8}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 -apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+  .wrap{max-width:1080px;margin:0 auto;padding:28px 20px 80px}
+  header{background:linear-gradient(135deg,#0f172a,#1e3a8a 60%,#2563eb);color:#fff;border-radius:18px;padding:28px 30px;box-shadow:0 12px 30px rgba(15,23,42,.18)}
+  header h1{margin:0 0 6px;font-size:26px;letter-spacing:.3px}
+  header .sub{opacity:.85;font-size:14px}
+  .badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+  .badge{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.28);padding:5px 11px;border-radius:999px;font-size:12.5px}
+  .badge.warn{background:rgba(250,204,21,.2);border-color:rgba(250,204,21,.5)}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:20px 0 6px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+  .kpi .v{font-size:24px;font-weight:650;letter-spacing:-.5px}
+  .kpi .l{color:var(--muted);font-size:12.5px;margin-top:2px}
+  section{margin-top:30px}
+  h2{font-size:17px;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+  h2::before{content:"";width:4px;height:16px;background:var(--accent);border-radius:2px}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+  #map{height:460px;border-radius:12px;overflow:hidden;background:#e8edf3}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:12.5px;color:var(--muted)}
+  .day{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:10px;display:grid;grid-template-columns:96px 1fr auto;gap:14px;align-items:start}
+  .day.rest{opacity:.72}
+  .day .d{font-weight:650;font-size:14px}
+  .day .dt{color:var(--muted);font-size:12.5px}
+  .day .m{color:var(--muted);font-size:13px;margin-top:3px}
+  .day .stat{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .day .stat b{font-size:16px}
+  .day .stat span{color:var(--muted);font-size:12px}
+  .tag{display:inline-block;font-size:11.5px;padding:2px 8px;border-radius:999px;margin:2px 4px 0 0;border:1px solid var(--line);color:var(--muted)}
+  .tag.high{color:var(--high);border-color:#f3c9c4;background:#fdf2f1}
+  .tag.medium{color:var(--med);border-color:#f6ddbd;background:#fef8ef}
+  .tag.low{color:var(--low);border-color:#cfe0f5;background:#f2f7fd}
+  .tag.ok{color:var(--ok);border-color:#c6e3d6;background:#f1f9f5}
+  .risk{border-left:3px solid var(--line);padding:10px 0 10px 14px;margin-bottom:12px}
+  .risk.high{border-color:var(--high)} .risk.medium{border-color:var(--med)} .risk.low{border-color:var(--low)}
+  .risk .h{font-weight:620;font-size:14px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+  .risk .body{font-size:13.5px;color:var(--muted);margin-top:4px}
+  .risk .act{font-size:13.5px;margin-top:5px}
+  .risk .act::before{content:"建议：";color:var(--ok);font-weight:600}
+  ul.plain{margin:0;padding-left:18px;font-size:13.5px;color:#333}
+  ul.plain li{margin:3px 0}
+  .grp{margin-bottom:14px}
+  .grp h3{font-size:13.5px;margin:0 0 6px;color:var(--muted);letter-spacing:.4px}
+  label.ck{display:flex;gap:9px;align-items:flex-start;padding:5px 0;font-size:13.5px;cursor:pointer}
+  label.ck input{margin-top:4px;accent-color:var(--accent)}
+  footer{margin-top:34px;color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padding-top:14px}
+  @media print{header{box-shadow:none;background:#1e3a8a !important;-webkit-print-color-adjust:exact}
+               body{background:#fff}.day{break-inside:avoid}#map{height:380px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>{{TITLE}}</h1>
+  <div class="sub">{{META}}</div>
+  <div class="badges">
+    <span class="badge">{{REVISION}}</span>
+    <span class="badge warn">执行门槛：{{GATE}}</span>
+    <span class="badge">{{RISK_COUNT}} 项风险 · {{UNKNOWN_COUNT}} 项未知</span>
+  </div>
+</header>
+
+<div class="kpis" id="kpis"></div>
+
+<section>
+  <h2>路线地图</h2>
+  <div class="panel">
+    <div id="map"></div>
+    <div class="legend" id="legend"></div>
+  </div>
+</section>
+
+<section><h2>逐日行程</h2><div id="days"></div></section>
+<section><h2>风险清单（按严重度）</h2><div class="panel" id="risks"></div></section>
+<section><h2>行前 48 小时检查清单</h2><div class="panel" id="checklist"></div></section>
+<section><h2>仍未知的事项</h2><div class="panel"><ul class="plain" id="unknowns"></ul></div></section>
+<section><h2>证据能力</h2><div class="panel"><ul class="plain" id="capabilities"></ul></div></section>
+
+<footer>{{FOOTER}}</footer>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const D = {{PAYLOAD}};
+const TILE = { url: {{TILE_URL}}, attribution: {{TILE_ATTR}}, subdomains: {{TILE_SUBDOMAINS}} };
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const sevOf = (s) => (['high', 'medium', 'low'].includes(s) ? s : '');
+
+// 地图
+const allPoints = [];
+let map = null;
+if (window.L) {
+  map = L.map('map', { scrollWheelZoom: false });
+  if (TILE.url) {
+    L.tileLayer(TILE.url, { subdomains: TILE.subdomains, maxZoom: 18, attribution: TILE.attribution }).addTo(map);
+  }
+  D.days.forEach((day) => {
+    day.legs.forEach((leg) => {
+      if (!leg.coords || leg.coords.length < 2) return;
+      allPoints.push(...leg.coords);
+      L.polyline(leg.coords, { color: day.color, weight: 4, opacity: .9 }).addTo(map);
+    });
+    const anchor = day.legs.length ? day.legs[day.legs.length - 1].coords.slice(-1)[0] : null;
+    if (anchor) {
+      L.circleMarker(anchor, { radius: 7, color: '#fff', weight: 2, fillColor: day.color, fillOpacity: 1 })
+        .bindPopup('<b>' + esc(day.date) + '</b><br>' + esc(day.overnight) +
+                   '<br>' + Math.round(day.km) + ' km / ' + day.h + ' h')
+        .addTo(map);
+    }
+  });
+  if (allPoints.length) map.fitBounds(allPoints, { padding: [30, 30] });
+} else if (document.getElementById('map')) {
+  document.getElementById('map').innerHTML =
+    '<div style="padding:24px;color:#5b6674">底图库未能加载（需要联网访问 CDN）。轨迹与行程数据仍以下方文字形式完整呈现。</div>';
+}
+document.getElementById('legend').innerHTML = D.days
+  .filter((d) => d.legs.length)
+  .map((d) => '<span><i style="display:inline-block;width:18px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle;background:' + d.color + '"></i>' + esc(d.id.toUpperCase()) + ' ' + esc(d.date) + '</span>')
+  .join('') + '<span>圆点为住宿点</span>';
+
+// KPI
+document.getElementById('kpis').innerHTML = D.kpis
+  .map((k) => '<div class="kpi"><div class="v">' + esc(k.v) + '</div><div class="l">' + esc(k.l) + '</div></div>')
+  .join('');
+
+// 逐日
+const riskById = Object.fromEntries(D.risks.map((r) => [r.id, r]));
+document.getElementById('days').innerHTML = D.days.map((d) => {
+  const tags = [...new Set(d.riskIds)].map((id) => {
+    const r = riskById[id];
+    return r ? '<span class="tag ' + sevOf(r.severity) + '">' + esc(r.severity) + '</span>' : '';
+  }).join('');
+  const legs = d.legs.map((l) => esc(l.from) + ' → ' + esc(l.to) + '（' + l.km + ' km / ' + l.h + ' h）').join('<br>');
+  return '<div class="day ' + (d.legs.length ? '' : 'rest') + '">' +
+    '<div><div class="d">' + esc(d.id.toUpperCase()) + '</div><div class="dt">' + esc(d.date) + '</div></div>' +
+    '<div><div>' + esc(d.text) + '</div><div class="m">' + (legs || '无驾车路段') +
+      ' · 住宿 ' + esc(d.overnight) + (d.overnightAlt ? '（约 ' + d.overnightAlt + ' m）' : '') + '</div></div>' +
+    '<div class="stat">' + (d.legs.length ? '<b>' + Math.round(d.km) + '</b><span> km</span><br><span>' + d.h + ' h</span>' : '<span>—</span>') +
+      '<div>' + tags + '</div></div></div>';
+}).join('');
+
+// 风险
+document.getElementById('risks').innerHTML = D.risks.map((r) =>
+  '<div class="risk ' + sevOf(r.severity) + '">' +
+    '<div class="h"><b>' + esc(r.id) + '</b>' +
+      '<span class="tag ' + sevOf(r.severity) + '">' + esc(r.severity) + '</span>' +
+      '<span class="tag">置信 ' + esc(r.confidence) + '</span>' +
+      '<span class="tag">覆盖 ' + esc(r.coverage) + '</span>' +
+      '<span class="tag ' + (r.status === 'resolved' ? 'ok' : '') + '">' + esc(r.status) + '</span>' +
+      (r.window ? '<span class="tag">' + esc(r.window) + '</span>' : '') +
+    '</div>' +
+    (r.unknown ? '<div class="body">' + esc(r.unknown) + '</div>' : '') +
+    (r.action ? '<div class="act">' + esc(r.action) + '</div>' : '') +
+  '</div>').join('') || '<p class="l">没有记录风险。</p>';
+
+// 检查清单
+document.getElementById('checklist').innerHTML = D.checklist.map((g) =>
+  '<div class="grp"><h3>' + esc(g.group) + '</h3>' +
+  g.items.map((i) => '<label class="ck"><input type="checkbox"><span>' + esc(i.text) +
+    (i.riskId && riskById[i.riskId] ? ' <span class="tag ' + sevOf(riskById[i.riskId].severity) + '">' + esc(riskById[i.riskId].severity) + '</span>' : '') +
+    '</span></label>').join('') + '</div>').join('');
+
+// 未知项与能力
+document.getElementById('unknowns').innerHTML = D.unknowns
+  .map((u) => '<li><code>' + esc(u.path) + '</code> — ' + esc(u.reason) + '</li>').join('') || '<li>无</li>';
+document.getElementById('capabilities').innerHTML = D.capabilities
+  .map((c) => '<li><b>' + esc(c.name) + '</b>：' + esc(c.status) +
+      (c.limitations.length ? ' — ' + esc(c.limitations.join('；')) : '') + '</li>').join('');
+</script>
+</body>
+</html>

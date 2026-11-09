@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lulu-roadtrip.dev/schemas/evidence.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "source", "sourceClass", "publicationTime", "collectedAt", "spatialScope", "temporalScope", "affectedLegIds", "claim", "kind", "freshness", "confidence"],
+  "properties": {
+    "schemaVersion": { "const": "0.1.0" },
+    "id": { "type": "string" },
+    "source": { "type": "object", "required": ["title", "url", "provider"], "properties": { "title": { "type": "string" }, "url": { "type": ["string", "null"] }, "provider": { "type": "string" } } },
+    "sourceClass": { "enum": ["official", "provider", "community", "user", "calculation"] },
+    "publicationTime": { "type": ["string", "null"], "format": "date-time" },
+    "collectedAt": { "type": "string", "format": "date-time" },
+    "spatialScope": { "type": "string" },
+    "temporalScope": { "type": "object", "required": ["startsAt", "endsAt"], "properties": { "startsAt": { "type": ["string", "null"] }, "endsAt": { "type": ["string", "null"] } } },
+    "affectedLegIds": { "type": "array", "items": { "type": "string" } },
+    "claim": { "type": "string", "minLength": 1 },
+    "kind": { "enum": ["fact", "inference"] },
+    "freshness": { "enum": ["current", "stale", "unknown"] },
+    "confidence": { "enum": ["low", "medium", "high"] }
+  }
+}

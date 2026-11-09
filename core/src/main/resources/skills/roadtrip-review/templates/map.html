@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{{TITLE}}</title>
+  <style>
+    :root { --ink:#17201d; --paper:#f5f2e9; --road:#087f5b; --risk:#c92a2a; --muted:#66706b; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:linear-gradient(135deg,#f5f2e9,#e5eee9); font-family:Georgia,"Times New Roman",serif; }
+    header,main { width:min(1080px,100%); margin:auto; padding:18px; }
+    header { display:flex; justify-content:space-between; gap:16px; align-items:end; }
+    h1 { margin:0; font-size:clamp(1.5rem,4vw,2.5rem); }
+    .meta,.notice,.basemap-note { color:var(--muted); font:14px/1.5 Verdana,sans-serif; }
+    .basemap-note { margin:8px 0 0; font-size:13px; }
+    .map { min-height:60vh; border:1px solid #aab5af; background:#eaf2ed; overflow:hidden; }
+    svg { display:block; width:100%; height:60vh; }
+    g.basemap image { opacity:.9; }
+    path { fill:none; stroke:var(--road); stroke-width:3; vector-effect:non-scaling-stroke; }
+    path.alternative { stroke:#d97706; stroke-dasharray:8 5; }
+    circle { fill:var(--risk); stroke:white; stroke-width:2; vector-effect:non-scaling-stroke; }
+    .controls { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; font:14px Verdana,sans-serif; }
+    button,a { min-height:40px; padding:9px 12px; color:var(--ink); background:#fff; border:1px solid #89968f; border-radius:4px; }
+    @media (max-width:600px) { header { align-items:start; flex-direction:column; } .map,svg { min-height:52vh; height:52vh; } }
+    @media print { body { background:#fff; } .controls { display:none; } .map { break-inside:avoid; } g.basemap { display:none; } }
+  </style>
+</head>
+<body>
+  <header><div><h1>{{TITLE}}</h1><div class="meta">{{METADATA}}</div></div><strong>Gate: {{GATE}}</strong></header>
+  <main>
+    <div class="controls">{{CONTROLS}}</div>
+    <div class="map">{{MAP}}</div>
+    <p class="basemap-note">{{BASEMAP}}</p>
+    <p class="notice">{{NOTICE}}</p>
+  </main>
+</body>
+</html>

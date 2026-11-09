@@ -68,7 +68,11 @@ class BundledScriptsManifestTest {
             assertTrue("$dir/${e.file} is marked runnable but missing", f.isFile)
             assertNotNull("$dir/${e.file}: no interpreter for this type", ScriptManifest.interpreterFor(e.file))
             val head = f.readLines().take(3).joinToString("\n")
-            assertTrue("$dir/${e.file} needs an Apache-2.0 header", "SPDX-License-Identifier: Apache-2.0" in head)
+            // 随包的脚本要么是 Mika 自己的(Apache-2.0),要么是从上游原样带进来的(MIT,原文随包放在条目目录里)
+            assertTrue(
+                "$dir/${e.file} needs a license header",
+                "SPDX-License-Identifier: Apache-2.0" in head || "SPDX-License-Identifier: MIT" in head,
+            )
             assertTrue("$dir/${e.file} needs --help", "Usage:" in f.readText())
         }
         // 不可运行的给出原因;要账号授权的统一说法
@@ -91,7 +95,8 @@ class BundledScriptsManifestTest {
             .map { it.readText() }
         assertTrue("no test sources found", tests.isNotEmpty())
         val shipped = catalog.runnableScripts()
-        assertEquals(shipped, catalog.scriptFiles().keys.filter { !it.endsWith("manifest.json") }.toSet())
+        // scriptFiles() 现在也带技能的其余附件(lib/、templates/…),这里只比 scripts/ 下的脚本
+        assertEquals(shipped, catalog.scriptFiles().keys.filter { "/scripts/" in it && !it.endsWith("manifest.json") }.toSet())
         for (path in shipped) {
             val script = "scripts/" + path.substringAfter("/scripts/")
             val skill = path.substringBefore("/scripts/")

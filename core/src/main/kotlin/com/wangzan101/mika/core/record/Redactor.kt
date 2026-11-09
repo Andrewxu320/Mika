@@ -25,6 +25,8 @@ object Redactor {
     /** [verb]:调用的工具做的动作(不认识的工具为 null)。 */
     fun args(verb: Verb?, argsJson: String, secretField: Boolean): String {
         if (verb == Verb.MemorySave || verb == Verb.MemoryEdit) return maskFields(argsJson, MEMORY_ARGS)
+        // 存密钥的值一律记为 ***:高德这类 32 位十六进制的 Key 不在下面的形状里,靠 text() 遮不住
+        if (verb == Verb.SecretSave) return maskFields(argsJson, setOf("value"))
         if (verb == Verb.Script) return script(argsJson)
         if (verb == Verb.PhoneCommand) return maskFields(argsJson, setOf("command"))
         if (verb == Verb.PhoneRun) return phoneRun(argsJson)
