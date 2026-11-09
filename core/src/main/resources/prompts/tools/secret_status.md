@@ -1,0 +1,1 @@
+List the keys stored on this phone with how many days are left, or check one by name. Expired keys are deleted and no longer listed; if the user asks about one that is gone, answer that it is no longer stored and ask for it again if it is still needed.

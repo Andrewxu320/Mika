@@ -38,11 +38,15 @@ object ProcRunner {
             "-w", if (cwd.isEmpty()) SandboxPaths.WORKSPACE else "${SandboxPaths.WORKSPACE}/$cwd",
         ) + command
 
-    /** 环境先清空,只给这些;桥没开时不给 MIKA_BRIDGE / MIKA_TOKEN。 */
+    /**
+     * 环境先清空,只给这些;桥没开时不给 MIKA_BRIDGE / MIKA_TOKEN。
+     * [extra]:存下的密钥等只给这一次进程的变量;由调用方从加密存储取出,不进命令行、不进结果。
+     */
     fun env(
         dirs: SandboxDirs, bridgeName: String?, token: String?, conversationId: String,
         /** 容器的网络代理;空串表示不用(见 NetProxyStore)。不允许联网时调用方给空串。 */
         proxy: String = "",
+        extra: Map<String, String> = emptyMap(),
     ): Map<String, String> = buildMap {
         put("PROOT_LOADER", dirs.lib("libproot_loader.so").path)
         put("PROOT_TMP_DIR", dirs.tmp.path)
@@ -64,6 +68,8 @@ object ProcRunner {
             put("no_proxy", NO_PROXY)
             put("NO_PROXY", NO_PROXY)
         }
+        // 最后放:调用方给的同名变量以调用方为准(密钥、一次性令牌)
+        putAll(extra)
     }
 
     /**

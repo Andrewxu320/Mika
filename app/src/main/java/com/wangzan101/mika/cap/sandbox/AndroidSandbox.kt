@@ -144,10 +144,10 @@ class AndroidSandbox internal constructor(
     }
 
     override suspend fun run(workspace: String, argv: List<String>, cwd: String?, timeoutMs: Long,
-        onProgress: (String) -> Unit): CommandResult = runWithPhone(workspace, argv, cwd, timeoutMs, onProgress, null)
+        onProgress: (String) -> Unit): CommandResult = runWithPhone(workspace, argv, cwd, timeoutMs, onProgress, null, emptyMap())
 
     override suspend fun runWithPhone(workspace: String, argv: List<String>, cwd: String?, timeoutMs: Long, onProgress: (String) -> Unit,
-        phone: PhoneCommandHandler?): CommandResult {
+        phone: PhoneCommandHandler?, env: Map<String, String>): CommandResult {
         val network = (status() as? SandboxStatus.Ready)?.network == true
         // 调用方给的 cwd 再核一遍:必须规范化后仍在工作区里
         val rel = cwd?.takeIf { it.isNotEmpty() }?.let { c ->
@@ -173,7 +173,7 @@ class AndroidSandbox internal constructor(
             // 命令结束(含超时、被杀、取消)就关掉桥:旧的名字和令牌不再能用
             val session = if (bridges) bridgeFor(workspace, network, onProgress, phone).open() else null
             try {
-                launch(cmd, ProcRunner.env(dirs, session?.name, session?.token, workspace, if (network) proxy() else ""), timeoutSec * 1000L + FALLBACK_GRACE_MS)
+                launch(cmd, ProcRunner.env(dirs, session?.name, session?.token, workspace, if (network) proxy() else "", env), timeoutSec * 1000L + FALLBACK_GRACE_MS)
             } finally {
                 session?.close()
             }

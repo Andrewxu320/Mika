@@ -44,9 +44,13 @@ class FakeSandbox(var status: SandboxStatus = SandboxStatus.Ready(network = fals
         return next(r)
     }
 
+    /** 最近一次调用带进来的环境变量(存下的密钥经 secretEnv 从这里进沙箱)。 */
+    val envs = mutableMapOf<String, String>()
+
     override suspend fun runWithPhone(workspace: String, argv: List<String>, cwd: String?, timeoutMs: Long,
-        onProgress: (String) -> Unit, phone: PhoneCommandHandler?): CommandResult {
+        onProgress: (String) -> Unit, phone: PhoneCommandHandler?, env: Map<String, String>): CommandResult {
         phoneHandler = phone
+        envs.putAll(env)
         return run(workspace, argv, cwd, timeoutMs, onProgress)
     }
 
