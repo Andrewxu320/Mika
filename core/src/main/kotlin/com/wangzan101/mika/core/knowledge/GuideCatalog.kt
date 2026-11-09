@@ -158,6 +158,8 @@ class GuideCatalog private constructor(
 
     /**
      * 要同步进沙箱的脚本:每个带 `scripts/manifest.json` 的条目,清单本身加上清单里列出的文件。
+     * 技能还带上自己的其余附件(`lib/`、`templates/` 这些脚本运行时相对导入或读的模板)——不带的话,
+     * 脚本在沙箱里 import 不到,`/opt/mika/skills` 下会缺文件。
      * 键是 `/opt/mika/skills` 之下的相对路径。
      */
     fun scriptFiles(): Map<String, ByteArray> {
@@ -168,6 +170,13 @@ class GuideCatalog private constructor(
             val dir = scriptSource(info)
             out["$dir/scripts/manifest.json"] = manifest
             for (e in ScriptManifest.parse(manifest.toString(Charsets.UTF_8))) resource("$src/${e.file}")?.let { out["$dir/${e.file}"] = it }
+            // 技能里 scripts/ 以外的附件:脚本 import 的 lib、读的模板都在这里。不在清单里的脚本文件不进来。
+            if (info.kind == KnowledgeIndex.SKILL) {
+                for (rel in info.files) {
+                    if (rel == SKILL_FILE || rel.startsWith("scripts/")) continue
+                    resource("$src/$rel")?.let { out["$dir/$rel"] = it }
+                }
+            }
         }
         return out
     }
