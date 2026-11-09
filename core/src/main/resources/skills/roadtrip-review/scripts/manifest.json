@@ -1,0 +1,34 @@
+[
+  {
+    "file": "scripts/validate-trip.mjs",
+    "runnable": true
+  },
+  {
+    "file": "scripts/render-report.mjs",
+    "runnable": true
+  },
+  {
+    "file": "scripts/render-map.mjs",
+    "runnable": true
+  },
+  {
+    "file": "scripts/render-overview.mjs",
+    "runnable": true
+  },
+  {
+    "file": "scripts/render-bundle.mjs",
+    "runnable": true
+  },
+  {
+    "file": "scripts/diff-assessments.mjs",
+    "runnable": true
+  },
+  {
+    "file": "scripts/fetch-amap-route.mjs",
+    "runnable": true,
+    "needs": [
+      "net"
+    ],
+    "network": true
+  }
+]

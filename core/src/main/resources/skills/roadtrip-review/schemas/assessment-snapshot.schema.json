@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lulu-roadtrip.dev/schemas/assessment-snapshot.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "tripId", "tripRevision", "createdAt", "ruleVersion", "scope", "capabilities", "evidenceIds", "findings", "gate"],
+  "properties": {
+    "schemaVersion": { "const": "0.1.0" },
+    "id": { "type": "string" },
+    "tripId": { "type": "string" },
+    "tripRevision": { "type": "string" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "ruleVersion": { "type": "string" },
+    "scope": { "type": "object", "required": ["kind", "ids"], "properties": { "kind": { "enum": ["whole-trip", "selected-day", "upcoming-legs"] }, "ids": { "type": "array", "items": { "type": "string" } } } },
+    "capabilities": { "type": "object", "additionalProperties": { "$ref": "capability.schema.json" } },
+    "evidenceIds": { "type": "array", "items": { "type": "string" } },
+    "findings": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/finding" }
+    },
+    "gate": { "enum": ["not-executable", "modification-required", "executable-with-monitoring", "insufficient-evidence", "passed"] }
+  },
+  "$defs": {
+    "finding": {
+      "type": "object",
+      "required": ["id", "legId", "severity", "confidence", "coverage", "status", "unknowns", "evidenceIds"],
+      "properties": {
+        "id": { "type": "string" },
+        "legId": { "type": "string" },
+        "severity": { "enum": ["information", "attention", "blocking"] },
+        "confidence": { "enum": ["low", "medium", "high"] },
+        "coverage": { "enum": ["full", "limited", "unknown", "none"] },
+        "status": { "type": "string", "minLength": 1 },
+        "unknowns": { "type": "array", "items": { "type": "string" } },
+        "evidenceIds": { "type": "array", "items": { "type": "string" } },
+        "expiresAt": { "type": ["string", "null"], "format": "date-time" }
+      }
+    }
+  }
+}

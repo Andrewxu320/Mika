@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lulu-roadtrip.dev/schemas/route.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "legId", "provider", "queryTime", "coordinateSystem", "distanceKm", "durationMinutes", "geometry", "elevationsMeters"],
+  "properties": {
+    "schemaVersion": { "const": "0.1.0" },
+    "id": { "type": "string" },
+    "legId": { "type": "string" },
+    "provider": { "type": "string", "minLength": 1 },
+    "queryTime": { "type": "string", "format": "date-time" },
+    "coordinateSystem": { "enum": ["GCJ-02", "WGS84"] },
+    "distanceKm": { "type": "number", "exclusiveMinimum": 0 },
+    "durationMinutes": { "type": "number", "exclusiveMinimum": 0 },
+    "geometry": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/coordinate" } },
+    "elevationsMeters": { "type": ["array", "null"], "items": { "type": "number", "minimum": -500, "maximum": 9000 } },
+    "sourceUrl": { "type": ["string", "null"], "format": "uri" }
+  },
+  "$defs": {
+    "coordinate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lat", "lon"],
+      "properties": {
+        "lat": { "type": "number", "minimum": -90, "maximum": 90 },
+        "lon": { "type": "number", "minimum": -180, "maximum": 180 }
+      }
+    }
+  }
+}

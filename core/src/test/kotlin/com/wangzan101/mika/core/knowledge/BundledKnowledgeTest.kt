@@ -23,7 +23,7 @@ class BundledKnowledgeTest {
     @Test fun bundledTreesPassValidationAndIndexIsCurrent() {
         val r = KnowledgeIndex.build(resources)
         assertTrue(r.errors.joinToString("\n"), r.errors.isEmpty())
-        assertEquals(mapOf("app" to 24, "site" to 18, "skill" to 6), r.entries.groupingBy { it.kind }.eachCount())
+        assertEquals(mapOf("app" to 24, "site" to 18, "skill" to 7), r.entries.groupingBy { it.kind }.eachCount())
         // 类路径上的索引就是按当前文件生成的那份
         assertEquals(r.entries, catalog.rows)
     }
@@ -54,7 +54,14 @@ class BundledKnowledgeTest {
     @Test fun onlyDocumentsAndManifestListedScripts() {
         val roots = listOf("knowledge/apps", "knowledge/sites", "skills").map { File(resources, it) }
         val others = roots.flatMap { r -> r.walkTopDown().filter { it.isFile && it.extension !in setOf("md", "json") }.toList() }
-        assertTrue(others.toString(), others.all { it.parentFile.name == "scripts" && File(it.parentFile, "manifest.json").isFile })
+        // 技能除了 scripts/ 里的清单脚本,还可以带脚本运行时要用的 lib/ 与 templates/(同一份技能目录下要有清单)
+        assertTrue(others.toString(), others.all { f ->
+            when (f.parentFile.name) {
+                "scripts" -> File(f.parentFile, "manifest.json").isFile
+                "lib", "templates" -> File(f.parentFile.parentFile, "scripts/manifest.json").isFile
+                else -> false
+            }
+        })
         // 英文副本不再随 App 打包
         assertTrue(roots.none { r -> r.walkTopDown().any { it.name.endsWith(".en.md") } })
     }

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lulu-roadtrip.dev/schemas/capability.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status", "provider", "checkedAt", "limitations", "failure"],
+  "properties": {
+    "status": { "enum": ["available", "limited", "unavailable", "unknown"] },
+    "provider": { "type": ["string", "null"] },
+    "checkedAt": { "type": "string", "format": "date-time" },
+    "limitations": { "type": "array", "items": { "type": "string" } },
+    "failure": { "type": ["object", "null"], "required": ["code", "message"], "properties": { "code": { "type": "string" }, "message": { "type": "string" } } }
+  }
+}
